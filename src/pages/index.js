@@ -22,42 +22,42 @@ export const query = graphql`
 // Run query in browser on hydration
 const BROWSER_QUERY = gql`
   query {
-    swapi {
-      allStarships {
-        name
-      }
+    allStarships {
+      name
     }
   }
 `
 
 function starshipQuery() {
-  const promise = client.query({
-    query: BROWSER_QUERY,
-  })
+  const promise = client
+    .query({
+      query: BROWSER_QUERY,
+    })
+    .then(response => {
+      return response.data
+    })
 
   return wrapPromise(promise)
 }
 
 const starshipQuerySuspender = starshipQuery()
 
+const Starships = () => {
+  const starships = starshipQuerySuspender.read()
+
+  return <StarshipsList list={starships} title="Dynamically loaded ships" />
+}
+
 const StarshipsList = ({ list, title }) => (
   <>
     <h2>{title}</h2>
     <ul>
-      {list.swapi.allStarships.map((ship, i) => (
+      {list.allStarships.map((ship, i) => (
         <li key={i}>{ship.name}</li>
       ))}
     </ul>
   </>
 )
-
-const Starships = ({ staticData }) => {
-  const starships = starshipQuerySuspender.read()
-
-  console.log(starships)
-
-  return <Suspense fallback={<p>loading</p>}>Loaded</Suspense>
-}
 
 const IndexPage = ({ data }) => (
   <Layout>
@@ -73,16 +73,22 @@ const IndexPage = ({ data }) => (
       experience smooth and there is nary a flicker of old content or loading
       bars.
     </p>
+    <p>Try going "offline" in DevTools and reload the page.</p>
 
-    {/* <Suspense fallback={<p>loading</p>}>Loaded</Suspense> */}
+    <Suspense
+      fallback={
+        <StarshipsList
+          list={data.swapi}
+          title="Statically compiled starships"
+        />
+      }
+    >
+      <Starships />
+    </Suspense>
 
-    <Starships staticData={data} />
-
-    {/* <Starships list={data} title="Statically compiled starships" /> */}
-
-    {/* <Suspense fallback={"Loading"}> */}
-    {/* <Starships list={starshipList} title="Dynamic starships" /> */}
-    {/* </Suspense> */}
+    <p>
+      Read full article 👉 <a href="">swizec.com/blog</a>
+    </p>
 
     <p>Now go build something great.</p>
     <div style={{ maxWidth: `300px`, marginBottom: `1.45rem` }}>
