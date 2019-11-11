@@ -1,12 +1,12 @@
 import React, { Suspense } from "react"
 import { graphql } from "gatsby"
-import gql from "graphql-tag"
+import { Link } from "gatsby"
 
 import Layout from "../components/layout"
 import Image from "../components/image"
 import SEO from "../components/seo"
 
-import { client } from "../apollo"
+import { starshipQuery, ErrorBoundary } from "../util"
 
 // Export static query for Gatsby
 export const query = graphql`
@@ -19,33 +19,13 @@ export const query = graphql`
   }
 `
 
-// Run query in browser on hydration
-const BROWSER_QUERY = gql`
-  query {
-    allStarships {
-      name
-    }
-  }
-`
-
-function starshipQuery() {
-  const promise = client
-    .query({
-      query: BROWSER_QUERY,
-    })
-    .then(response => {
-      return response.data
-    })
-
-  return wrapPromise(promise)
-}
-
-const starshipQuerySuspender = starshipQuery()
+// Run query on browser hydration
+const starshipQuerySuspender = starshipQuery(10)
 
 const Starships = () => {
   const starships = starshipQuerySuspender.read()
 
-  return <StarshipsList list={starships} title="Dynamically loaded ships" />
+  return <StarshipsList list={starships} title="10 Dynamically loaded ships" />
 }
 
 const StarshipsList = ({ list, title }) => (
@@ -58,23 +38,6 @@ const StarshipsList = ({ list, title }) => (
     </ul>
   </>
 )
-
-// Error boundaries currently have to be classes.
-class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null }
-  static getDerivedStateFromError(error) {
-    return {
-      hasError: true,
-      error,
-    }
-  }
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback
-    }
-    return this.props.children
-  }
-}
 
 const IndexPage = ({ data }) => (
   <Layout>
@@ -91,6 +54,27 @@ const IndexPage = ({ data }) => (
       bars.
     </p>
     <p>Try going "offline" in DevTools and reload the page.</p>
+
+    <p>
+      <big>
+        Click{" "}
+        <Link
+          to="/page-2"
+          state={
+            {
+              // starshipQuerySuspender: () => starshipQuery(15), didn't work either
+            }
+          }
+        >
+          page 2
+        </Link>{" "}
+        for an almost true fetch-as-you-load experience
+      </big>
+    </p>
+
+    <p>
+      Read full article for details 👉 <a href="">swizec.com/blog</a>
+    </p>
 
     <Suspense
       fallback={
@@ -112,10 +96,6 @@ const IndexPage = ({ data }) => (
       </ErrorBoundary>
     </Suspense>
 
-    <p>
-      Read full article 👉 <a href="">swizec.com/blog</a>
-    </p>
-
     <p>Now go build something great.</p>
     <div style={{ maxWidth: `300px`, marginBottom: `1.45rem` }}>
       <Image />
@@ -124,30 +104,3 @@ const IndexPage = ({ data }) => (
 )
 
 export default IndexPage
-
-// Helper borrowed from React Concurrent docs
-function wrapPromise(promise) {
-  let status = "pending"
-  let result
-  let suspender = promise.then(
-    r => {
-      status = "success"
-      result = r
-    },
-    e => {
-      status = "error"
-      result = e
-    }
-  )
-  return {
-    read() {
-      if (status === "pending") {
-        throw suspender
-      } else if (status === "error") {
-        throw result
-      } else if (status === "success") {
-        return result
-      }
-    },
-  }
-}
