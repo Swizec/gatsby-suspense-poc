@@ -6,7 +6,7 @@
     "author": "Swizec Teller <swizec@swizec.comm>",
     "dependencies": {
         "apollo-boost": "^0.4.4",
-        "gatsby": "^2.17.6",
+        "gatsby": "^2.32.13",
         "gatsby-image": "^2.2.30",
         "gatsby-plugin-manifest": "^2.2.25",
         "gatsby-plugin-offline": "^3.0.17",
